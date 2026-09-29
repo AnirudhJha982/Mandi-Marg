@@ -1,0 +1,34 @@
+import type { NextAuthConfig } from "next-auth"
+
+export const authConfig = {
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "super_secret_for_next_auth_demo",
+  trustHost: true,
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: '/login',
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role
+        token.language = user.language
+        token.isManualLanguage = user.isManualLanguage
+        token.preferredLanguage = user.preferredLanguage
+        if ('centreId' in user) token.centreId = user.centreId
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.role = token.role as string
+        session.user.language = token.language as string
+        session.user.isManualLanguage = token.isManualLanguage as boolean | undefined
+        session.user.preferredLanguage = token.preferredLanguage as string | undefined
+        session.user.id = token.sub as string
+        if (token.centreId) session.user.centreId = token.centreId as string
+      }
+      return session
+    }
+  },
+  providers: [], // Configured in auth.ts
+} satisfies NextAuthConfig
